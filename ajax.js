@@ -20,23 +20,30 @@ jQuery(document).ready(function ($) {
 
         $('#dlg-ajax-message').html('<span style="color: #0073aa;">Creating... This may take a moment. Please be patient as we finish up.</span>');
 
-
         let data = $(this).serializeArray();
-        data.push({ name: 'action', value: 'dlg_generate_posts' }); // Add action parameter
+        data.push({ name: 'action', value: 'dlg_generate_posts' });
         let offset = 0;
 
         function generatePostsBatch() {
             data.push({ name: 'offset', value: offset });
 
             $.post(dlg_ajax_object.ajax_url, data, function (response) {
-                let result = JSON.parse(response);
+                try {
+                    let result = JSON.parse(response);
 
-                if (result.success && result.remaining > 0) {
-                    offset += BATCH_SIZE;
-                    generatePostsBatch(); // Call the next batch
-                } else {
-                    $('#dlg-ajax-message').html(result.message || 'All posts generated successfully!');
+                    if (result.success && result.remaining > 0) {
+                        offset += BATCH_SIZE;
+                        generatePostsBatch(); // Call the next batch
+                    } else {
+                        $('#dlg-ajax-message').html(result.message || '<span style="color: green;">All posts have been generated successfully!</span>');
+                    }
+                } catch (error) {
+                    $('#dlg-ajax-message').html('<span style="color: red;">Oops! There was an issue processing the server response. Please try again or contact support if the problem persists.</span>');
+                    console.error('JSON Parse Error:', error, response);
                 }
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                $('#dlg-ajax-message').html('<span style="color: red;">Network error: Unable to complete the request. Please check your connection or try again later.</span>');
+                console.error('AJAX Error:', textStatus, errorThrown);
             });
         }
 
@@ -49,32 +56,37 @@ jQuery(document).ready(function ($) {
 
         $('#dlg-ajax-message-tax').html('<span style="color: #0073aa;">Creating... Please be patient as we finish up</span>');
 
-
         let data = $(this).serializeArray();
-        data.push({ name: 'action', value: 'dlg_create_taxonomies' }); // Add action parameter
+        data.push({ name: 'action', value: 'dlg_create_taxonomies' });
         let offset = 0;
 
         function createTaxonomiesBatch() {
             data.push({ name: 'offset', value: offset });
 
             $.post(dlg_ajax_object.ajax_url, data, function (response) {
-                let result = JSON.parse(response);
-                console.log({result});
+                try {
+                    let result = JSON.parse(response);
 
-                if (result.success && result.remaining > 0) {
-
-                    offset += BATCH_SIZE;
-
-                    createTaxonomiesBatch();
-                } else {
-                    $('#dlg-ajax-message-tax').html(result.message || 'All taxonomies created successfully!');
+                    if (result.success && result.remaining > 0) {
+                        offset += BATCH_SIZE;
+                        createTaxonomiesBatch();
+                    } else {
+                        $('#dlg-ajax-message-tax').html(result.message || '<span style="color: green;">All taxonomies have been created successfully!</span>');
+                    }
+                } catch (error) {
+                    $('#dlg-ajax-message-tax').html('<span style="color: red;">Oops! There was an issue processing the server response. Please try again or contact support if the problem persists.</span>');
+                    console.error('JSON Parse Error:', error, response);
                 }
+            }).fail(function (jqXHR, textStatus, errorThrown) {
+                $('#dlg-ajax-message-tax').html('<span style="color: red;">Network error: Unable to complete the request. Please check your connection or try again later.</span>');
+                console.error('AJAX Error:', textStatus, errorThrown);
             });
         }
 
         createTaxonomiesBatch();
     });
-    
+
+
 
     // Handle the delete content form submission
     $('#dlg-delete-content-form').on('submit', function (e) {
