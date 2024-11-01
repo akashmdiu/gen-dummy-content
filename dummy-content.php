@@ -2,10 +2,11 @@
 /*
 Plugin Name: Dynamic Content Generator
 Description: Generate posts and taxonomies with dynamic content based on user-defined parameters.
-Version: 4.0
-Author: Your Name
+Version: 1.0.0
+Author: Akash Mia
 */
-define('BATCH_SIZE', 50); // Number of posts/taxonomies to process in each batch
+
+define('BATCH_SIZE', 10); // Number of posts/taxonomies to process in each batch
 
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
@@ -71,9 +72,14 @@ function dlg_generate_content()
                     <td><input type="number" name="dlg_post_word_count" value="100" min="10" required></td>
                 </tr>
                 <tr>
-                    <th>Select Taxonomy Terms:</th>
+                    <th>
+                        <span>Select Taxonomy Terms to inlclude in the content</span> <br />
+
+                        <span style="font-size: 12px; font-wight: 300; margin-top: 15px; display: inline-block"><kbd>Shift</kbd> + Click to select multiple</span>
+
+                    </th>
                     <td>
-                        <select name="dlg_tax_terms[]" multiple required>
+                        <select style="height: 300px;" name="dlg_tax_terms[]" multiple required>
                             <?php foreach ($taxonomies as $taxonomy) : ?>
                                 <?php
                                         $terms = get_terms(['taxonomy' => $taxonomy->name, 'hide_empty' => false]);
@@ -238,6 +244,7 @@ function dlg_generate_posts($post_type, $word_count, $title_word_count, $number_
 }
 
 
+// Create taxonomies with dynamic names
 function dlg_create_taxonomies($taxonomy_name, $taxonomy_count, $desc_word_count, $title_word_count, $offset = 0)
 {
     if (taxonomy_exists($taxonomy_name)) {
