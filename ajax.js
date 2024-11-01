@@ -18,7 +18,7 @@ jQuery(document).ready(function ($) {
     $('#dlg-generate-posts-form').submit(function (e) {
         e.preventDefault();
 
-        $('#dlg-ajax-message').html('<span style="color: #0073aa;">Creating...</span>');
+        $('#dlg-ajax-message').html('<span style="color: #0073aa;">Creating... This may take a moment. Please be patient as we finish up.</span>');
 
 
         let data = $(this).serializeArray();
@@ -32,8 +32,6 @@ jQuery(document).ready(function ($) {
                 let result = JSON.parse(response);
 
                 if (result.success && result.remaining > 0) {
-                    $('#dlg-ajax-message').html(`<span style="color: #0073aa;">Creating... Remaing: ${result.remaining}</span>`);
-
                     offset += BATCH_SIZE;
                     generatePostsBatch(); // Call the next batch
                 } else {
@@ -49,7 +47,7 @@ jQuery(document).ready(function ($) {
     $('#dlg-create-taxonomies-form').submit(function (e) {
         e.preventDefault();
 
-        $('#dlg-ajax-message-tax').html('<span style="color: #0073aa;">Creating...</span>');
+        $('#dlg-ajax-message-tax').html('<span style="color: #0073aa;">Creating... Please be patient as we finish up</span>');
 
 
         let data = $(this).serializeArray();
@@ -61,11 +59,9 @@ jQuery(document).ready(function ($) {
 
             $.post(dlg_ajax_object.ajax_url, data, function (response) {
                 let result = JSON.parse(response);
-                console.log({ result });
+                console.log({result});
 
                 if (result.success && result.remaining > 0) {
-
-                    $('#dlg-ajax-message').html(`<span style="color: #0073aa;">Creating... Remaing: ${result.remaining}</span>`);
 
                     offset += BATCH_SIZE;
 
@@ -78,7 +74,7 @@ jQuery(document).ready(function ($) {
 
         createTaxonomiesBatch();
     });
-
+    
 
     // Handle the delete content form submission
     $('#dlg-delete-content-form').on('submit', function (e) {
