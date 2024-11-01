@@ -1,3 +1,4 @@
+
 <?php
 /*
 Plugin Name: Dynamic Content Generator
@@ -5,6 +6,9 @@ Description: Generate posts and taxonomies with dynamic content based on user-de
 Version: 4.0
 Author: Your Name
 */
+
+define('BATCH_SIZE', 10); // Number of posts/taxonomies to process in each batch
+
 
 if (!defined('ABSPATH')) exit; // Exit if accessed directly
 
@@ -168,30 +172,31 @@ function dlg_generate_content() {
     <?php
 }
 
-// AJAX handler for generating posts
 function dlg_ajax_generate_posts() {
     $post_type = sanitize_text_field($_POST['dlg_post_type']);
     $number_of_posts = intval($_POST['dlg_number_of_posts']);
     $post_word_count = intval($_POST['dlg_post_word_count']);
     $title_word_count = intval($_POST['dlg_title_word_count']);
     $selected_tax_terms = $_POST['dlg_tax_terms'] ?? [];
-    
-    dlg_generate_posts($post_type, $post_word_count, $title_word_count, $number_of_posts, $selected_tax_terms);
-    wp_die(); // Required to terminate immediately and return a proper response
+    $offset = intval($_POST['offset']); // Get offset
+
+    dlg_generate_posts($post_type, $post_word_count, $title_word_count, $number_of_posts, $selected_tax_terms, $offset);
+    wp_die();
 }
 add_action('wp_ajax_dlg_generate_posts', 'dlg_ajax_generate_posts');
 
-// AJAX handler for creating taxonomies
 function dlg_ajax_create_taxonomies() {
     $taxonomy_name = sanitize_text_field($_POST['dlg_taxonomy_name']);
     $taxonomy_count = intval($_POST['dlg_taxonomy_count']);
     $desc_word_count = intval($_POST['dlg_taxonomy_desc_word_count']);
     $title_word_count = intval($_POST['dlg_taxonomy_title_word_count']);
-    
-    dlg_create_taxonomies($taxonomy_name, $taxonomy_count, $desc_word_count, $title_word_count);
+    $offset = intval($_POST['offset']); // Get offset
+
+    dlg_create_taxonomies($taxonomy_name, $taxonomy_count, $desc_word_count, $title_word_count, $offset);
     wp_die();
 }
 add_action('wp_ajax_dlg_create_taxonomies', 'dlg_ajax_create_taxonomies');
+
 
 // AJAX handler for deleting posts
 function dlg_ajax_delete_content() {
@@ -210,8 +215,10 @@ function dlg_ajax_delete_taxonomy() {
 add_action('wp_ajax_dlg_delete_taxonomy', 'dlg_ajax_delete_taxonomy');
 
 // Generate dynamic posts with selected terms
-function dlg_generate_posts($post_type, $word_count, $title_word_count, $number_of_posts, $tax_terms) {
-    for ($i = 0; $i < $number_of_posts; $i++) {
+function dlg_generate_posts($post_type, $word_count, $title_word_count, $number_of_posts, $tax_terms, $offset = 0) {
+    $limit = min(BATCH_SIZE, $number_of_posts - $offset);
+
+    for ($i = 0; $i < $limit; $i++) {
         $post_id = wp_insert_post([
             'post_title' => dlg_generate_real_title($title_word_count),
             'post_content' => dlg_generate_dynamic_content($word_count, $tax_terms),
@@ -219,22 +226,30 @@ function dlg_generate_posts($post_type, $word_count, $title_word_count, $number_
             'post_type' => $post_type,
         ]);
     }
-    echo json_encode(['success' => true, 'message' => "$number_of_posts posts created successfully!"]);
+
+    $remaining = $number_of_posts - ($offset + $limit);
+    echo json_encode(['success' => true, 'remaining' => $remaining]);
 }
 
+
 // Create taxonomies with dynamic names
-function dlg_create_taxonomies($taxonomy_name, $taxonomy_count, $desc_word_count, $title_word_count) {
+function dlg_create_taxonomies($taxonomy_name, $taxonomy_count, $desc_word_count, $title_word_count, $offset = 0) {
     if (taxonomy_exists($taxonomy_name)) {
-        for ($i = 0; $i < $taxonomy_count; $i++) {
-            $term_name = dlg_generate_real_title($title_word_count); // Generate a term name
-            $term_description = dlg_generate_dynamic_content($desc_word_count, []); // Generate a description
+        $limit = min(BATCH_SIZE, $taxonomy_count - $offset);
+
+        for ($i = 0; $i < $limit; $i++) {
+            $term_name = dlg_generate_real_title($title_word_count);
+            $term_description = dlg_generate_dynamic_content($desc_word_count, []);
             wp_insert_term($term_name, $taxonomy_name, ['description' => $term_description]);
         }
-        echo json_encode(['success' => true, 'message' => "$taxonomy_count taxonomies created successfully!"]);
+
+        $remaining = $taxonomy_count - ($offset + $limit);
+        echo json_encode(['success' => true, 'remaining' => $remaining]);
     } else {
         echo json_encode(['success' => false, 'message' => 'Selected taxonomy does not exist!']);
     }
 }
+
 
 // Delete all posts of the specified post type
 function dlg_delete_content($post_type) {
